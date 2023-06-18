@@ -1,0 +1,8 @@
+### BEGIN Windows 11 ###
+menuentry "Windows 11" --class windows --class os {
+   insmod ntfs
+   search --no-floppy --set=root --fs-uuid 6CDA4527DA44EF40
+   chainloader (${root})/EFI/Microsoft/Boot/bootmgfw.efi
+   boot
+}
+### END Windows 11 ###
