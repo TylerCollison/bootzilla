@@ -1,83 +1,82 @@
 ### BEGIN Ubuntu 20 General ###
-menuentry 'Ubuntu 20 General' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
+menuentry 'Ubuntu 20 General' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-simple-<UUID>' {
 	insmod gzio
 	if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
 	insmod part_gpt
 	insmod ext2
 	set root='hd1,gpt3'
 	if [ x$feature_platform_search_hint = xy ]; then
-	  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+	  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  <UUID>
 	else
-	  search --no-floppy --fs-uuid --set=root d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+	  search --no-floppy --fs-uuid --set=root <UUID>
 	fi
-	linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=d5aba05f-5dc1-4ccc-8f74-33346a2124a4 ro  quiet splash $vt_handoff
+	linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=<UUID> ro  quiet splash $vt_handoff
 	initrd	/boot/initrd.img-5.13.0-27-generic
 }
-submenu 'Advanced options for Ubuntu 20 General' $menuentry_id_option 'gnulinux-advanced-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
-	menuentry 'Ubuntu, with Linux 5.13.0-27-generic' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.13.0-27-generic-advanced-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
+submenu 'Advanced options for Ubuntu 20 General' $menuentry_id_option 'gnulinux-advanced-<UUID>' {
+	menuentry 'Ubuntu, with Linux 5.13.0-27-generic' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.13.0-27-generic-advanced-<UUID>' {
 		insmod gzio
 		if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
 		insmod part_gpt
 		insmod ext2
 		set root='hd1,gpt3'
 		if [ x$feature_platform_search_hint = xy ]; then
-		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  <UUID>
 		else
-		  search --no-floppy --fs-uuid --set=root d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root <UUID>
 		fi
 		echo	'Loading Linux 5.13.0-27-generic ...'
-		linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=d5aba05f-5dc1-4ccc-8f74-33346a2124a4 ro  quiet splash $vt_handoff
+		linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=<UUID> ro  quiet splash $vt_handoff
 		echo	'Loading initial ramdisk ...'
 		initrd	/boot/initrd.img-5.13.0-27-generic
 	}
-	menuentry 'Ubuntu, with Linux 5.13.0-27-generic (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.13.0-27-generic-recovery-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
+	menuentry 'Ubuntu, with Linux 5.13.0-27-generic (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.13.0-27-generic-recovery-<UUID>' {
 		insmod gzio
 		if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
 		insmod part_gpt
 		insmod ext2
 		set root='hd1,gpt3'
 		if [ x$feature_platform_search_hint = xy ]; then
-		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  <UUID>
 		else
-		  search --no-floppy --fs-uuid --set=root d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root <UUID>
 		fi
 		echo	'Loading Linux 5.13.0-27-generic ...'
-		linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=d5aba05f-5dc1-4ccc-8f74-33346a2124a4 ro recovery nomodeset dis_ucode_ldr 
+		linux	/boot/vmlinuz-5.13.0-27-generic root=UUID=<UUID> ro recovery nomodeset dis_ucode_ldr 
 		echo	'Loading initial ramdisk ...'
 		initrd	/boot/initrd.img-5.13.0-27-generic
 	}
-	menuentry 'Ubuntu, with Linux 5.11.0-27-generic' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-27-generic-advanced-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
+	menuentry 'Ubuntu, with Linux 5.11.0-27-generic' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-27-generic-advanced-<UUID>' {
 		insmod gzio
 		if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
 		insmod part_gpt
 		insmod ext2
 		set root='hd1,gpt3'
 		if [ x$feature_platform_search_hint = xy ]; then
-		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  <UUID>
 		else
-		  search --no-floppy --fs-uuid --set=root d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root <UUID>
 		fi
 		echo	'Loading Linux 5.11.0-27-generic ...'
-		linux	/boot/vmlinuz-5.11.0-27-generic root=UUID=d5aba05f-5dc1-4ccc-8f74-33346a2124a4 ro  quiet splash $vt_handoff
+		linux	/boot/vmlinuz-5.11.0-27-generic root=UUID=<UUID> ro  quiet splash $vt_handoff
 		echo	'Loading initial ramdisk ...'
 		initrd	/boot/initrd.img-5.11.0-27-generic
 	}
-	menuentry 'Ubuntu, with Linux 5.11.0-27-generic (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-27-generic-recovery-d5aba05f-5dc1-4ccc-8f74-33346a2124a4' {
+	menuentry 'Ubuntu, with Linux 5.11.0-27-generic (recovery mode)' --class ubuntu --class gnu-linux --class gnu --class os $menuentry_id_option 'gnulinux-5.11.0-27-generic-recovery-<UUID>' {
 		insmod gzio
 		if [ x$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi
 		insmod part_gpt
 		insmod ext2
 		set root='hd1,gpt3'
 		if [ x$feature_platform_search_hint = xy ]; then
-		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root --hint-bios=hd1,gpt3 --hint-efi=hd1,gpt3 --hint-baremetal=ahci1,gpt3  <UUID>
 		else
-		  search --no-floppy --fs-uuid --set=root d5aba05f-5dc1-4ccc-8f74-33346a2124a4
+		  search --no-floppy --fs-uuid --set=root <UUID>
 		fi
 		echo	'Loading Linux 5.11.0-27-generic ...'
-		linux	/boot/vmlinuz-5.11.0-27-generic root=UUID=d5aba05f-5dc1-4ccc-8f74-33346a2124a4 ro recovery nomodeset dis_ucode_ldr 
+		linux	/boot/vmlinuz-5.11.0-27-generic root=UUID=<UUID> ro recovery nomodeset dis_ucode_ldr 
 		echo	'Loading initial ramdisk ...'
 		initrd	/boot/initrd.img-5.11.0-27-generic
 	}
 }
-
 ### END Ubuntu 20 General ###

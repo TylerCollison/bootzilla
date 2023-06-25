@@ -1,8 +1,8 @@
-### BEGIN Windows 11 ###
+### BEGIN Windows 11 Gaming Base ###
 menuentry "Windows 11" --class windows --class os {
    insmod ntfs
-   search --no-floppy --set=root --fs-uuid 6CDA4527DA44EF40
+   search --no-floppy --set=root --fs-uuid <UUID>
    chainloader (${root})/EFI/Microsoft/Boot/bootmgfw.efi
    boot
 }
-### END Windows 11 ###
+### END Windows 11 Gaming Base ###

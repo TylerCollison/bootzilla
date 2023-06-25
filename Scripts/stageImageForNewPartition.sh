@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: stageImageForNewPartition ImageRepo OriginalImage OldPartition NewPartition
+# Usage: stageImageForNewPartition.sh ImageRepo OriginalImage OldPartition NewPartition
 
 IMAGE_REPO="$1"
 ORIGINAL_IMAGE="$2"

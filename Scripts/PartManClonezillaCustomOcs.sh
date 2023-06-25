@@ -14,6 +14,18 @@ source $DRBL_SCRIPT_PATH/sbin/ocs-functions && source /etc/ocs/ocs-live.conf
 # Load language files. For English, use "en_US.UTF-8". For Traditional Chinese, use "zh_TW.UTF-8"
 ask_and_load_lang_set en_US.UTF-8 
 
+# Select the boot partition
+echo "Select the boot partition: "
+availablePartitionLine=$(lsblk -lando PATH)
+availablePartitionArray=($availablePartitionLine)
+select bootPartition in "${availablePartitionArray[@]}"
+do
+    test -n "$bootPartition" && break
+    echo ">>> Invalid partition selection!!! Try Again"
+done
+mkdir boot
+mount "$bootPartition" ./bootpart
+
 # Select a disk to manage
 lsblk -a -o NAME,LABEL,PARTUUID,PARTLABEL,SIZE
 echo "Select a disk to manage: "
@@ -72,11 +84,13 @@ else
   echo "Error: failed to create new partition"
 fi
 
-# Generate new UUID for added partition
-# e2fsck -f $targetPartitionPath
-# tune2fs -U random $targetPartitionPath
+# Set new UUID for added partition
+newUUID=$(bash "./updatePartitionUUID.sh" "$targetPartitionPath")
 
+# Add the grub entry for the new partition
+bash "./restoreGrub.sh" "$image" "./bootpart" "$newUUID"
+
+# Unmount the boot partition
+unmount ./bootpart
 # Cleanup temporary files
 # rm -r "$IMAGE_REPO_PATH/$TMP_IMAGE"
-
-#TODO: restore the grub entries
