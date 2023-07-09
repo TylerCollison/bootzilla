@@ -10,14 +10,20 @@ fi
 
 UNIT="$3"
 PART_SIZE=$2
+nextFreeSpaceLineSector=$(parted -s $1 unit s print free | tail -n 2 | head -1)
+nextFreeSpaceSectorArray=($nextFreeSpaceLineSector)
+nextFreeSpaceStartSector=${nextFreeSpaceSectorArray[0]}
+
 nextFreeSpaceLine=$(parted -s $1 unit $UNIT print free | tail -n 2 | head -1)
 nextFreeSpaceArray=($nextFreeSpaceLine)
-nextFreeSpaceStart=${nextFreeSpaceArray[0]}
+nextFreeSpaceStart=${nextFreeSpaceArray[0]//$UNIT}
+nextFreeSpaceStartRounded=${nextFreeSpaceStart%%.*}
 nextFreeSpaceSize=${nextFreeSpaceArray[2]//$UNIT}
+nextFreeSpaceSizeRounded=${nextFreeSpaceSize%%.*}
 nextFreeSpaceID1=${nextFreeSpaceArray[3]}
 nextFreeSpaceID2=${nextFreeSpaceArray[4]}
 
-if [[ $nextFreeSpaceID1 == "Free" ]] && [[ $nextFreeSpaceID2 == "Space" ]] && (( $nextFreeSpaceSize > $PART_SIZE )); then
+if [[ $nextFreeSpaceID1 == "Free" ]] && [[ $nextFreeSpaceID2 == "Space" ]] && (( $nextFreeSpaceSizeRounded > $PART_SIZE )); then
 
   # There is enough free space; ask for user confirmation  
   read -p "$PART_SIZE$UNIT of free space is available. Are you sure you want to create the partition? " -r
@@ -27,7 +33,7 @@ if [[ $nextFreeSpaceID1 == "Free" ]] && [[ $nextFreeSpaceID2 == "Space" ]] && ((
   
     # User has confirmed. Proceed to create the partition in the next available space
     echo "Creating partition of size $PART_SIZE$UNIT from beginning of free space."
-    if parted $1 --script mkpart primary "$nextFreeSpaceStart" "$[${nextFreeSpaceStart//$UNIT} + $PART_SIZE]$UNIT"; then
+    if parted $1 --script mkpart primary "$nextFreeSpaceStartSector" "$[$nextFreeSpaceStartRounded + $PART_SIZE]$UNIT"; then
       echo "Partition created successfully"
       exit 0
     else

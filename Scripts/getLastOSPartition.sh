@@ -7,10 +7,6 @@ then
   exit 1
 fi
 
-UNIT="MiB"
-newPartitionLine=$(parted -s $1 unit $UNIT print free | tail -n 3 | head -1)
-newPartitionArray=($newPartitionLine)
-newPartitionNumber=${newPartitionArray[0]}
-newPartitionPath="$1$newPartitionNumber"
+pathToManagedDisk="$1"
 
-echo "$newPartitionPath"
+lsblk -lano PATH | grep "$pathToManagedDisk" | sort | tail -n 1

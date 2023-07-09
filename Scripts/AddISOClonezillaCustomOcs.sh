@@ -4,8 +4,8 @@ DRBL_SCRIPT_PATH="${DRBL_SCRIPT_PATH:-/usr/share/drbl}"
 DRBL_CONFIG_PATH="${DRBL_SCRIPT_PATH:-/etc/drbl}"
 
 IMAGE_REPO_PATH="/home/partimag"
-TMP_IMAGE="tmp-image"
 BOOT_PARTITION_PATH="/home/user/bootpart"
+ISO_PARTITION_PATH="/home/user/isopart"
 
 # Load Clonezilla live functions and configuration
 source $DRBL_SCRIPT_PATH/sbin/drbl-conf-functions
@@ -99,66 +99,44 @@ targetDiskName=${targetDisk//"/dev/"}
 prep-ocsroot
 
 # Select an image to restore
-echo "Select an image to restore: "
-imageRepoDirs=$(ls -d $IMAGE_REPO_PATH/*/ | xargs -n 1 basename)
-imageRepoDirArray=($imageRepoDirs)
-select image in "${imageRepoDirArray[@]}"
+echo "Select an ISO to restore: "
+imageISOs=$(ls $IMAGE_REPO_PATH)
+imageRepoISOArray=($imageISOs)
+select image in "${imageRepoISOArray[@]}"
 do
     test -n "$image" && break
     echo ">>> Invalid disk selection!!! Try Again"
 done
 
-# Select a partition to restore
-echo "Select a partition to restore: "
-imagePartitions=$(more "$IMAGE_REPO_PATH/$image/parts")
-imagePartitionsArray=($imagePartitions)
-select oldPartition in "${imagePartitionsArray[@]}"
-do
-    test -n "$oldPartition" && break
-    echo ">>> Invalid partition selection!!! Try Again"
-done
-
-# Get info about the old partition
-oldPartitionNumber=$(echo "${oldPartition##*[!0-9]}")
-oldPartitionInfo=$(grep "^ $oldPartitionNumber" "$IMAGE_REPO_PATH/$image/$targetDiskName-pt.parted")
-oldPartitionInfoArray=($oldPartitionInfo)
-oldPartitionSize=${oldPartitionInfoArray[3]//"s"}
-oldPartitionFileSystem=${oldPartitionInfoArray[4]}
+# Get size for partition
+read -p "Enter the size (in GB) for the new ISO partition: " -r
+echo # Move to a new line
+partitionSize="$REPLY"
 
 # Create new partition
-if bash "./createBasePartition.sh" "$targetDisk" "$oldPartitionSize" "s"; then
+if bash "./createBasePartition.sh" "$targetDisk" "$partitionSize" "GB"; then
   targetPartitionPath=$(bash "./getLastOSPartition.sh" "$targetDisk")
   targetPartitionName=${targetPartitionPath//"/dev/"}
-  
-  # Stage the image for restoration (if restoring to a different partition)
-  if bash "./stageImageForNewPartition.sh" "$IMAGE_REPO_PATH" "$image" "$oldPartition" "$targetPartitionName"; then
-    echo "Restoring image to new partition at $targetPartitionName"
-    ocs-sr -t -scr -k -c -r -j2 -p "command" restoreparts "$TMP_IMAGE" "$targetPartitionName"
+
+  # Setup FAT32 filesystem on new partition
+  mkfs.vfat -F32 "$targetPartitionPath"
+  if fsck.vfat "$targetPartitionPath"; then
+    # Mount the boot partition
+    mkdir "$ISO_PARTITION_PATH"
+    mount "$targetPartitionPath" "$ISO_PARTITION_PATH"
+
+    # Unzip the ISO to the new partition
+    7z x "$IMAGE_REPO_PATH/$image" -o"$ISO_PARTITION_PATH"
+
+    # Add the grub entry for the new partition
+    echo "Adding grub entry for new partition"
+    bash "./restoreGrub.sh" "$IMAGE_REPO_PATH/$image" "$BOOT_PARTITION_PATH" "$targetPartitionPath"
   else
-    echo "Error: failed to stage image for restoration"
+    echo "Error: failed to format new partition"
     exit 1;
   fi
-
-  # Set new UUID for added partition
-  if [[ "$oldPartitionFileSystem" = "ext"* ]]; then
-    echo "Detected EXT filesystem; generating new UUID"
-    bash "./updateEXTPartitionUUID.sh" "$targetPartitionPath"
-  elif [[ "$oldPartitionFileSystem" = "ntfs" ]]; then
-    echo "Detected NTFS filesystem; generating new Volume Serial Number"
-    bash "./updateNTFSPartitionUUID.sh" "$targetPartitionPath"
-  else
-    echo "Error: unsupported filesystem type: $oldPartitionFileSystem"
-    echo "The partition UUID was not updated"
-  fi
-
-  # Add the grub entry for the new partition
-  echo "Adding grub entry for new partition"
-  bash "./restoreGrub.sh" "$IMAGE_REPO_PATH/$image" "$BOOT_PARTITION_PATH" "$targetPartitionPath"
   
 else
   echo "Error: failed to create new partition"
   exit 1;
 fi
-
-# Cleanup temporary files
-rm -r "$IMAGE_REPO_PATH/$TMP_IMAGE"
