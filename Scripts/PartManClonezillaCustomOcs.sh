@@ -6,6 +6,7 @@ DRBL_CONFIG_PATH="${DRBL_SCRIPT_PATH:-/etc/drbl}"
 IMAGE_REPO_PATH="/home/partimag"
 TMP_IMAGE="tmp-image"
 BOOT_PARTITION_PATH="/home/user/bootpart"
+WINDOWS_PATH="/home/user/windows"
 
 # Load Clonezilla live functions and configuration
 source $DRBL_SCRIPT_PATH/sbin/drbl-conf-functions
@@ -77,7 +78,8 @@ mkdir "$BOOT_PARTITION_PATH"
 mount "$bootPartition" "$BOOT_PARTITION_PATH"
 
 # Setup the boot partition
-if bash "./setupBootPartition.sh" "$targetBootDisk" "$BOOT_PARTITION_PATH"; then
+bootPartitionNumber=$(echo "${bootPartition##*[!0-9]}")
+if bash "./setupBootPartition.sh" "$targetBootDisk" "$BOOT_PARTITION_PATH" "$bootPartitionNumber"; then
   echo "The boot partition has been configured correctly"
 else
   echo "Warning: The boot partition is not configured correctly; some operations may fail"
@@ -118,17 +120,34 @@ do
     echo ">>> Invalid partition selection!!! Try Again"
 done
 
-# Get info about the old partition
+# Find the parted file
+echo "Searching for parted file in Clonezilla image"
+ptFile="None"
+ptFiles=$(ls "$IMAGE_REPO_PATH/$image" | grep "\-pt.parted$")
+ptFileArray=($ptFiles)
+for pt in "${ptFileArray[@]}"
+do
+   if [[ "$oldPartition" = "${pt%-*}"* ]]; then
+    ptFile="$pt"
+   fi
+done
+if [[ "$ptFile" = "None" ]]; then
+  echo "Error: Parted file not found"
+  exit 1;
+fi
+
+# Extract info about the old partition
 oldPartitionNumber=$(echo "${oldPartition##*[!0-9]}")
-oldPartitionInfo=$(grep "^ $oldPartitionNumber" "$IMAGE_REPO_PATH/$image/$targetDiskName-pt.parted")
+oldPartitionInfo=$(grep "^ $oldPartitionNumber" "$IMAGE_REPO_PATH/$image/$ptFile")
 oldPartitionInfoArray=($oldPartitionInfo)
 oldPartitionSize=${oldPartitionInfoArray[3]//"s"}
 oldPartitionFileSystem=${oldPartitionInfoArray[4]}
 
-# Create new partition
-if bash "./createBasePartition.sh" "$targetDisk" "$oldPartitionSize" "s"; then
+# Create new partition (with ~2MB buffer)
+if bash "./createBasePartition.sh" "$targetDisk" "$[$oldPartitionSize + 4096]" "s"; then
   targetPartitionPath=$(bash "./getLastOSPartition.sh" "$targetDisk")
   targetPartitionName=${targetPartitionPath//"/dev/"}
+  targetPartitionNumber=$(echo "${targetPartitionPath##*[!0-9]}")
   
   # Stage the image for restoration (if restoring to a different partition)
   if bash "./stageImageForNewPartition.sh" "$IMAGE_REPO_PATH" "$image" "$oldPartition" "$targetPartitionName"; then
@@ -154,6 +173,30 @@ if bash "./createBasePartition.sh" "$targetDisk" "$oldPartitionSize" "s"; then
   # Add the grub entry for the new partition
   echo "Adding grub entry for new partition"
   bash "./restoreGrub.sh" "$IMAGE_REPO_PATH/$image" "$BOOT_PARTITION_PATH" "$targetPartitionPath"
+
+  # Ask if the user wants to add Windows boot files
+  read -p "Do you want to add Windows EFI boot files to the partition? " -r
+  echo    # Move to a new line
+  if [[ $REPLY =~ ^[Yy]$ ]]
+  then
+    # Mount the Windows partition
+    mkdir "$WINDOWS_PATH"
+    mount "$targetPartitionPath" "$WINDOWS_PATH"
+
+    # Restore the Windows EFI boot files
+    bash "./restoreWindowsEFI.sh" "$WINDOWS_PATH"
+  fi
+
+  # Ask if the user wants to make the new partition available on Windows
+  read -p "Do you want to make the new partition visible to Windows installations? " -r
+  echo # Move to a new line
+  if [[ $REPLY =~ ^[Yy]$ ]]
+  then
+      # Set the partition type to "Microsoft Basic Data" (11)
+      # This allows Windows installations to access the partition
+      echo "Setting partition type to 'Microsoft Basic Data'"
+      sfdisk --part-type "$targetDisk" "$targetPartitionNumber" "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7"
+  fi
   
 else
   echo "Error: failed to create new partition"

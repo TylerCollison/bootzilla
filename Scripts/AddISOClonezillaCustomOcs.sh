@@ -6,6 +6,7 @@ DRBL_CONFIG_PATH="${DRBL_SCRIPT_PATH:-/etc/drbl}"
 IMAGE_REPO_PATH="/home/partimag"
 BOOT_PARTITION_PATH="/home/user/bootpart"
 ISO_PARTITION_PATH="/home/user/isopart"
+WINDOWS_PATH="/home/user/windows"
 
 # Load Clonezilla live functions and configuration
 source $DRBL_SCRIPT_PATH/sbin/drbl-conf-functions
@@ -77,7 +78,8 @@ mkdir "$BOOT_PARTITION_PATH"
 mount "$bootPartition" "$BOOT_PARTITION_PATH"
 
 # Setup the boot partition
-if bash "./setupBootPartition.sh" "$targetBootDisk" "$BOOT_PARTITION_PATH"; then
+bootPartitionNumber=$(echo "${bootPartition##*[!0-9]}")
+if bash "./setupBootPartition.sh" "$targetBootDisk" "$BOOT_PARTITION_PATH" "$bootPartitionNumber"; then
   echo "The boot partition has been configured correctly"
 else
   echo "Warning: The boot partition is not configured correctly; some operations may fail"
@@ -119,8 +121,8 @@ if bash "./createBasePartition.sh" "$targetDisk" "$partitionSize" "GB"; then
   targetPartitionName=${targetPartitionPath//"/dev/"}
 
   # Setup FAT32 filesystem on new partition
-  mkfs.vfat -F32 "$targetPartitionPath"
-  if fsck.vfat "$targetPartitionPath"; then
+  mkfs.exfat "$targetPartitionPath"
+  if fsck.exfat "$targetPartitionPath"; then
     # Mount the boot partition
     mkdir "$ISO_PARTITION_PATH"
     mount "$targetPartitionPath" "$ISO_PARTITION_PATH"
@@ -131,10 +133,26 @@ if bash "./createBasePartition.sh" "$targetDisk" "$partitionSize" "GB"; then
     # Add the grub entry for the new partition
     echo "Adding grub entry for new partition"
     bash "./restoreGrub.sh" "$IMAGE_REPO_PATH/$image" "$BOOT_PARTITION_PATH" "$targetPartitionPath"
-  else
-    echo "Error: failed to format new partition"
-    exit 1;
-  fi
+
+    # Ask if this is a Windows ISO
+    read -p "Is this a Windows ISO and/or should it be visible to Windows installations? " -r
+    echo    # Move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+      # Mount the Windows partition
+      mkdir "$WINDOWS_PATH"
+      mount "$targetPartitionPath" "$WINDOWS_PATH"
+
+      # Set the partition type to "Microsoft Basic Data" (11)
+      # This must be done for Windows ISO installations to work properly
+      # For other ISO installs, setting the partition type to 11 will 
+      # make the partition visible to Windows installations
+      sfdisk --part-type "$targetDisk" "$targetPartitionNumber" "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7"
+    fi
+    else
+      echo "Error: failed to format new partition"
+      exit 1;
+    fi
   
 else
   echo "Error: failed to create new partition"

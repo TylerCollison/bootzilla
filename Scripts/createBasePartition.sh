@@ -10,9 +10,10 @@ fi
 
 UNIT="$3"
 PART_SIZE=$2
-nextFreeSpaceLineSector=$(parted -s $1 unit s print free | tail -n 2 | head -1)
-nextFreeSpaceSectorArray=($nextFreeSpaceLineSector)
-nextFreeSpaceStartSector=${nextFreeSpaceSectorArray[0]}
+nextFreeSpaceLineMiB=$(parted -s $1 unit MiB print free | tail -n 2 | head -1)
+nextFreeSpaceMiBArray=($nextFreeSpaceLineMiB)
+nextFreeSpaceStartMiBRoundedDown=${nextFreeSpaceMiBArray[0]%.*} #Round down
+nextFreeSpaceStartMiB="$[${nextFreeSpaceStartMiBRoundedDown//"MiB"} + 1]" #Round up
 
 nextFreeSpaceLine=$(parted -s $1 unit $UNIT print free | tail -n 2 | head -1)
 nextFreeSpaceArray=($nextFreeSpaceLine)
@@ -33,7 +34,7 @@ if [[ $nextFreeSpaceID1 == "Free" ]] && [[ $nextFreeSpaceID2 == "Space" ]] && ((
   
     # User has confirmed. Proceed to create the partition in the next available space
     echo "Creating partition of size $PART_SIZE$UNIT from beginning of free space."
-    if parted $1 --script mkpart primary "$nextFreeSpaceStartSector" "$[$nextFreeSpaceStartRounded + $PART_SIZE]$UNIT"; then
+    if parted -a optimal $1 --script mkpart primary "${nextFreeSpaceStartMiB}MiB" "$[$nextFreeSpaceStartRounded + $PART_SIZE]$UNIT"; then
       echo "Partition created successfully"
       exit 0
     else

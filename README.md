@@ -23,5 +23,8 @@ The Bootzilla scripts are located at /run/live/medium/live of the Clonezilla liv
  * May need to set the Clonezilla name server and manually configure static IP (though DHCP would be preferred)
 * Add ability to load ISOs directly from the internet
 * Explore using chroot to update Linux installations before booting
-* Need to run bcdboot on Windows installations post-restore
+* Adapt "CreateGenericBCD.bat" to re-create the "Windows/EFI" folder
 * See if the "generic" Windows EFI folder can be copied to an OS partition that has never been setup for EFI
+ * Works when applied to a new image on the same drive it was taken from
+ * Not yet successful on new drive
+* Add ability to format disk as GPT
